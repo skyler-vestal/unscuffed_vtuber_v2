@@ -1,0 +1,5 @@
+/nologo
+/OUT:bazel-out/x64_windows-opt/bin/mediapipe/GDMP/util/resource_util_godot.lib
+/MACHINE:X64
+bazel-out/x64_windows-opt/bin/mediapipe/GDMP/util/_objs/resource_util_godot/resource_util_godot.obj
+/ignore:4221

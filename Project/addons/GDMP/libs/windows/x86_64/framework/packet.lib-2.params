@@ -1,0 +1,5 @@
+/nologo
+/OUT:bazel-out/x64_windows-opt/bin/mediapipe/GDMP/framework/packet.lib
+/MACHINE:X64
+bazel-out/x64_windows-opt/bin/mediapipe/GDMP/framework/_objs/packet/packet.obj
+/ignore:4221

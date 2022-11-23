@@ -1,0 +1,19 @@
+[remap]
+
+importer="wavefront_obj"
+type="Mesh"
+path="res://.import/camera_helper_cv.obj-45e59df55b83e229fb3b1a0a8f04306c.mesh"
+
+[deps]
+
+files=[ "res://.import/camera_helper_cv.obj-45e59df55b83e229fb3b1a0a8f04306c.mesh" ]
+
+source_file="res://addons/GDMP/libs/windows/x86_64/io/_objs/camera_helper_cv/camera_helper_cv.obj"
+dest_files=[ "res://.import/camera_helper_cv.obj-45e59df55b83e229fb3b1a0a8f04306c.mesh", "res://.import/camera_helper_cv.obj-45e59df55b83e229fb3b1a0a8f04306c.mesh" ]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3( 1, 1, 1 )
+offset_mesh=Vector3( 0, 0, 0 )
+optimize_mesh=true

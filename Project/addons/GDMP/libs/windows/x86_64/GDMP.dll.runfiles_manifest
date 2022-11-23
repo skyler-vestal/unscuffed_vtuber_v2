@@ -1,0 +1,5 @@
+mediapipe/_solib_x64_windows/_U@windows_Uopencv_S_S_Copencv___Ux64_Svc15_Sbin/opencv_world3410.dll C:/users/hange/_bazel_hange/rzdenrrv/execroot/mediapipe/bazel-out/x64_windows-opt/bin/_solib_x64_windows/_U@windows_Uopencv_S_S_Copencv___Ux64_Svc15_Sbin/opencv_world3410.dll
+mediapipe/mediapipe/GDMP/GDMP.dll C:/users/hange/_bazel_hange/rzdenrrv/execroot/mediapipe/bazel-out/x64_windows-opt/bin/mediapipe/GDMP/GDMP.dll
+mediapipe/mediapipe/GDMP/opencv_world3410.dll C:/users/hange/_bazel_hange/rzdenrrv/execroot/mediapipe/bazel-out/x64_windows-opt/bin/mediapipe/GDMP/opencv_world3410.dll
+mediapipe/mediapipe/modules/pose_detection/pose_detection.tflite C:/users/hange/_bazel_hange/rzdenrrv/execroot/mediapipe/bazel-out/x64_windows-opt/bin/mediapipe/modules/pose_detection/pose_detection.tflite
+mediapipe/mediapipe/modules/pose_landmark/pose_landmark_full.tflite C:/users/hange/_bazel_hange/rzdenrrv/execroot/mediapipe/bazel-out/x64_windows-opt/bin/mediapipe/modules/pose_landmark/pose_landmark_full.tflite

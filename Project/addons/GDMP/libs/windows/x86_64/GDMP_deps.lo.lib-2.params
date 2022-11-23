@@ -1,0 +1,5 @@
+/nologo
+/OUT:bazel-out/x64_windows-opt/bin/mediapipe/GDMP/GDMP_deps.lo.lib
+/MACHINE:X64
+bazel-out/x64_windows-opt/bin/mediapipe/GDMP/_objs/GDMP_deps/gdlibrary.obj
+/ignore:4221

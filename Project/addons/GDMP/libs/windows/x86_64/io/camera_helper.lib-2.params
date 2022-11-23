@@ -1,0 +1,5 @@
+/nologo
+/OUT:bazel-out/x64_windows-opt/bin/mediapipe/GDMP/io/camera_helper.lib
+/MACHINE:X64
+bazel-out/x64_windows-opt/bin/mediapipe/GDMP/io/_objs/camera_helper/camera_helper.obj
+/ignore:4221
