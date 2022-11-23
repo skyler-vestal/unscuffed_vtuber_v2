@@ -27,8 +27,9 @@ func _on_permission_denied() -> void:
 	print("permission denied")
 
 func _on_new_frame(stream_name : String, packet) -> void:
-	var image : Image = gpu_helper.get_gpu_frame(packet)
-	$TextureRect.texture.create_from_image(image)
+	pass
+	#var image : Image = gpu_helper.get_gpu_frame(packet)
+	#$TextureRect.texture.create_from_image(image)
 
 func _on_new_pose(stream_name : String, packet) -> void:
 	var bytes : PoolByteArray = packet.get_proto()
