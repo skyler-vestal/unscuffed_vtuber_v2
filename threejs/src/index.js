@@ -12,6 +12,7 @@ import { Quaternion, Vector3, Matrix3 } from 'three';
 import '@tensorflow/tfjs-backend-webgl';
 import '@mediapipe/pose';
 import Stats from 'stats.js'
+import { meshgrid } from '@tensorflow/tfjs-core';
 
 const SAMPLING_INTERVAL_MS = 50; 
 const FRAME_BUFFER_SIZE = 500;
@@ -71,18 +72,23 @@ const modelToRealMap = {
 
 const stats = new Stats()
 stats.showPanel(0)
-document.body.appendChild(stats.dom)
 
 // Load model
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
-var renderer = new THREE.WebGLRenderer();
+// Video stream
+const video = document.getElementById('video');
+
+var renderer = new THREE.WebGLRenderer({ alpha: true });
+renderer.setClearAlpha(0.0);
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
+document.body.appendChild(stats.dom)
+stats.domElement.style = 'bottom:10px';
 
 camera.position.set( 0, 1.25, -1.00 );
-camera.lookAt( 0, .85, 0 );
+camera.lookAt( 0, .90, 0 );
 
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(2, 2, 5);
@@ -94,6 +100,7 @@ var model;
 var boneHelper;
 var init_quats = [];
 var init_inv_quats = [];
+let bones_drawn = [];
 
 loader.load(
 
@@ -139,12 +146,39 @@ loader.load(
 );
 
 
+const disp_material = new THREE.LineBasicMaterial({
+    color: 0x0000ff
+});
+
+function vecToScreen(v) {
+    return new THREE.Vector3(v.x / window.innerWidth * 2 - 1, -(v.y / window.innerHeight * 2 - 1), -1);
+}
+
+function drawBones(frame) {
+    if (frame.displayBones) {
+        if (drawBones.length > 0) {
+            scene.remove(...bones_drawn);
+        }
+        for (const [key, bone] of Object.entries(frame.displayBones)) {
+            if (Math.min(...bone.cur_score) > .65) { 
+                // draw on near plane
+                const v1 = vecToScreen(bone.cur[0]).unproject(camera);
+                const v2 = vecToScreen(bone.cur[1]).unproject(camera);
+                const geometry = new THREE.BufferGeometry().setFromPoints([v1, v2]);
+                const line = new THREE.Line( geometry, disp_material );
+                bones_drawn.push(line);
+                scene.add(line);
+            }
+        }
+    }
+}
+
 const clock = new THREE.Clock();
 
 var animate = function () {
-    //setTimeout( function() {
+    // setTimeout( function() {
         requestAnimationFrame( animate );
-    //}, 500);
+    // }, 500);
 
     stats.begin()
     const deltaTime = clock.getDelta();
@@ -155,6 +189,7 @@ var animate = function () {
                 model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
             }
         }
+        drawBones(pose_frames.getLastFrame());
         res = hand_frames.getInterpolatedState(new Date().getTime() - SAMPLING_INTERVAL_MS, modelToRealMap);
         if (res) {
             for (const [k, v] of Object.entries(res)) {
@@ -171,8 +206,6 @@ var animate = function () {
 animate();
 
 
-// Video stream
-const video = document.getElementById('webcam');
 window.addEventListener('DOMContentLoaded', enableCam);
 
 // Enable the live webcam view and start classification.
@@ -215,7 +248,7 @@ async function predictWebcam() {
         if (body_detector && video && poses && poses[0]) {
             // update current state
             if (pose_frames) {
-                let new_frame = new Frame(poseMapBones, [poses[0].keypoints3D]);
+                let new_frame = new Frame(poseMapBones, [poses[0].keypoints3D], [poses[0].keypoints]);
                 pose_frames.add(new_frame);
                 pose_started = true;
             }
@@ -227,12 +260,16 @@ async function predictWebcam() {
         if (hand_detector && video && hands && hands.length > 0) {
             if (hand_frames) {
                 let hand_data = [];
+                let hand_display_data = [];
                 // only push data for hands detected
                 for (let i = 0; i < hands.length && i < 2; i++) {
                     hand_data.push(hands[i].keypoints3D);
+                    hand_display_data.push(hands[i].keypoints);
                     hand_data[i].handedness = hands[i].handedness;
+                    hand_display_data[i].handedness = hands[i].handedness;
                     for (let j = 0; j < hand_data[i].length; j++) {
                         hand_data[i][j].score = hands[i].score;
+                        hand_display_data[i][j].score = hands[i].score;
                     }
                 }
                 hand_frames.add(new Frame(handMapBones, hand_data));

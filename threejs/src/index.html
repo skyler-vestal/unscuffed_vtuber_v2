@@ -5,13 +5,16 @@
 		<title>Graphics is my passion</title>
 		<style>
 			video {
-				visibility: hidden;
-				margin-top: -480px;
+				/* visibility: hidden; */
+				z-index: -1;
+				position: absolute;
+				top: 0;
+				left: 0;
 			}
 		</style>
 		<script src="./index.js" type="module"></script>
 	</head>
 	<body>
-		<video id="webcam" autoplay width="640" height="480"></video>
+		<video id="video" autoplay width="640" height="480"></video>
 	</body>
 </html>

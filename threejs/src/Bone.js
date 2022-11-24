@@ -2,6 +2,7 @@ import { assert } from '@tensorflow/tfjs-core/dist/util_base';
 import { Vector2, Vector3, Quaternion, Matrix4, Euler, Matrix3, OneMinusDstAlphaFactor } from 'three';
 import { getRotationBetweenVec, getAngleBetween3Points, clamp, negateQuatW } from './utils';
 import * as THREE from 'three';
+import { assertValidResolution } from '@tensorflow-models/posenet/dist/util';
 
 const MIN_VALID_SCORE = 0.65;
 
@@ -165,14 +166,23 @@ export class FrameBuffer {
         var idx = this.__get_idx__(time);
         return idx ? [this.frames[idx], this.frames[this.__mod__(idx + 1)]] : [null, null];
     }
+
+    getLastFrame() {
+        const idx = this.__mod__(this.next_idx - 1);
+        // potential for oldest frame in arr?
+        assert(this.frames[idx] != null); 
+        return this.frames[idx];
+    }
 }
 
 export class Frame {
-    constructor(pointMap, keypoints_arr) {
+    constructor(pointMap, keypoints_arr, keypoints_2d_arr=null) {
         this.time = (new Date()).getTime(); // ms
         this.bones = new Object();
+        this.displayBones = new Object();
         if (keypoints_arr !== null && keypoints_arr.length > 0) {
-            keypoints_arr.forEach(keypoints => {
+            keypoints_arr.forEach((keypoints, idx) => {
+                let keypoints_2d = keypoints_2d_arr == null ? null : keypoints_2d_arr[idx];
                 for (const [key, pts] of Object.entries(pointMap)) {
                     let f_key = key;
                     if (keypoints.handedness != null) {
@@ -183,34 +193,16 @@ export class Frame {
                         }
                     }
                     this.bones[f_key] = new Bone(pts, keypoints);
+                    if (keypoints_2d) {
+                        this.displayBones[f_key] = new Bone(pts, keypoints_2d, true);
+                    }
                 }});
         }
-        // this.keypoints = keypoints; // TF keypoints
-        // this.initBones(keypoints);
     }
-
-    // initBones(keypoints) {
-    //     if (keypoints !== null && keypoints.length > 0) {
-    //         // pairs of indices of bones from BlazePose API
-    //         let pairs = [[7, 8], [11, 12], [11, 13], [13, 15], 
-    //             [15, 21], [15, 17], [17, 19], [19, 15],
-    //             [12, 14], [14, 16], [16, 22], [16, 20], 
-    //             [20, 18], [18, 16], [11, 23], [12, 24],
-    //             [23, 24], [23, 25], [25, 27], [27, 29],
-    //             [29, 31], [31, 27], [24, 26], [26, 28],
-    //             [28, 30], [30, 32], [32, 28], [11, 12, 23, 24], // 
-    //             [9, 10], [11, 12, 0], [18, 20, 16], [17, 19, 15]]; // 31
-        
-    //         this.bones = [];
-    //         for (const pair of pairs) {
-    //             this.bones.push(new Bone(pair, keypoints));
-    //         }
-    //     }
-    // }
 }
 
 export class Bone {
-    constructor(pair, data) {
+    constructor(pair, data, display=false) {
         let a_num = typeof pair[0] == 'number';
         let b_num = typeof pair[1] == 'number';
         if (a_num && b_num) {
@@ -228,7 +220,14 @@ export class Bone {
         function avg(v1, v2) {
             return new Vector3((v1["x"] + v2["x"]) / 2, -(v1["y"] + v2["y"]) / 2, (v1["z"] + v2["z"]) / 2);
         }
-        this.cur = [avg(start_1, start_2), avg(end_1, end_2)];
+        function display_avg(v1, v2) {
+            return new Vector3((v1["x"] + v2["x"]) / 2, (v1["y"] + v2["y"]) / 2);
+        }
+        if (display) {
+            this.cur = [display_avg(start_1, start_2), display_avg(end_1, end_2)];
+        } else {
+            this.cur = [avg(start_1, start_2), avg(end_1, end_2)];
+        }
         this.cur_score = [(data[pair[0]].score + data[pair[1]].score) / 2, (data[pair[2]].score + data[pair[3]].score) / 2];
     }
 
