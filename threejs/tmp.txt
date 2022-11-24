@@ -1,0 +1,32 @@
+cur:  
+Array [ {…}, {…} ]
+​
+0: Object { x: -0.3213080680300841, y: 0.4497771645931266, z: -0.11143087581435723 }
+​
+1: Object { x: -0.5235609709011645, y: 0.48310307293695637, z: -0.20144754247333135 }
+​​
+x: -0.5235609709011645
+​​
+y: 0.48310307293695637
+​​
+z: -0.20144754247333135
+​​
+<prototype>: Object { isVector3: true, setEulerFromRotationMatrix: setEulerFromRotationMatrix(), setEulerFromQuaternion: setEulerFromQuaternion(), … }
+​
+length: 2
+​
+<prototype>: Array []
+index.js:91:24
+
+
+rel :  
+Array [ {…}, {…} ]
+​
+0: Object { x: -0.10397919056282152, y: 0.46657830537581646, z: -0.08317389164159622 }
+​
+1: Object { x: -0.3213080680300841, y: 0.4497771645931266, z: -0.11143087581435723 }
+​
+length: 2
+​
+<prototype>: Array []
+index.js:92:24
