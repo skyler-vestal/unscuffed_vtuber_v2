@@ -13,6 +13,71 @@ import '@tensorflow/tfjs-backend-webgl';
 import '@mediapipe/pose';
 import Stats from 'stats.js'
 import { meshgrid } from '@tensorflow/tfjs-core';
+import * as dat from 'dat.gui';
+
+class TrackManager {
+    constructor(tracks) {
+        this.tracks = tracks;
+        this.current_track = null;
+    }
+
+    play(track_name) {
+        if (this.current_track) this.current_track.stop();
+
+        for (let i = 0; i < this.tracks.length; i++) {
+            if (track_name === this.tracks[i].name) {
+                this.current_track = this.tracks[i];
+                this.current_track.play();
+
+                console.log("Now playing " + track_name);
+                return;
+            }
+        }
+        console.log("Could not find track to play");
+    }
+
+    get_track_names() {
+        return Array.from(this.tracks, t => t.name);
+    }
+}
+
+class Track {
+    constructor(name, audio_path) {
+        this.name = name;
+        this.audio = new Audio(audio_path);
+    }
+
+    play() {
+        this.audio.play();
+    }
+
+    stop() {
+        this.audio.pause();
+        this.audio.currentTime = 0;
+    }
+}
+
+var tm = new TrackManager([
+    // Add new tracks here.
+    // new Track("Your track name", "relative/path/in/static/resources/directory")
+    new Track("Sasuke", "/music/sasuke.mp3")
+]);
+
+// GUI
+const gui = new dat.GUI();
+var gameplay_options = gui.addFolder('Gameplay Options');
+gameplay_options.open();
+var controller;
+var gui_options = {
+    'Track': 'Select a Track.',
+    'Play!': function () {
+        tm.play(controller.getValue())
+    }
+};
+
+controller = gameplay_options.add( gui_options, 'Track', tm.get_track_names());
+
+gameplay_options.add( gui_options, 'Play!' );
 
 const SAMPLING_INTERVAL_MS = 50; 
 const FRAME_BUFFER_SIZE = 500;
@@ -147,7 +212,7 @@ loader.load(
 
 
 const disp_material = new THREE.LineBasicMaterial({
-    color: 0x0000ff
+    color: 0xffffff
 });
 
 function vecToScreen(v) {
