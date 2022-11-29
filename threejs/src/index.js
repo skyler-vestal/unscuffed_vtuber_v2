@@ -107,6 +107,7 @@ const poseMapBones = {
     "right_up_leg": [23, 25],
     "left_low_leg": [26, 28],
     "right_low_leg": [25, 27],
+    "hips": [23, 24],
 }
 
 const handMapBones = {
@@ -124,6 +125,7 @@ const modelToRealMap = {
     [VRMSchema.HumanoidBoneName.LeftLowerArm]: ["right_low_arm", "right_up_arm", null], // real right elbow
     [VRMSchema.HumanoidBoneName.RightLowerArm]: ["left_low_arm", "left_up_arm", null], // real left elbow
     [VRMSchema.HumanoidBoneName.Neck] : ["neck", "collarbone", [Math.PI / 2, 0, 0, Math.PI / 10]], // head
+    [VRMSchema.HumanoidBoneName.Hips] : ["hips", "right_side", [Math.PI / 2, 0, 0, Math.PI / 10]], // hips
     // [VRMSchema.HumanoidBoneName.RightHand]: ["left_hand", "left_low_arm", null], // left hand
     // [VRMSchema.HumanoidBoneName.LeftHand]: ["right_hand", "right_low_arm", null], // right hand
     // [VRMSchema.HumanoidBoneName.RightIndexProximal]: ["-left_index_one", "left_index_palm", null],
@@ -162,6 +164,7 @@ scene.add(light);
 
 var loader = new GLTFLoader();
 var model;
+var player;
 var boneHelper;
 var init_quats = [];
 var init_inv_quats = [];
@@ -180,6 +183,7 @@ loader.load(
 
 			// add the loaded vrm to the scene
             model = vrm;
+
 			scene.add( vrm.scene );
             boneHelper = new THREE.SkeletonHelper( vrm.scene );
             console.log(boneHelper);
@@ -199,8 +203,6 @@ loader.load(
 
             pose_frames = new FrameBuffer(FRAME_BUFFER_SIZE, init_quats, init_inv_quats, SAMPLING_INTERVAL_MS)
             hand_frames = new FrameBuffer(FRAME_BUFFER_SIZE, init_quats, init_inv_quats, SAMPLING_INTERVAL_MS)
-
-
 		} );
 
 	},
@@ -219,9 +221,20 @@ function vecToScreen(v) {
     return new THREE.Vector3(v.x / window.innerWidth * 2 - 1, -(v.y / window.innerHeight * 2 - 1), -1);
 }
 
+function translateModel(frame) {
+    if (frame.displayBones) {
+        let hips = frame.displayBones["hips"]
+        if (x && y) {
+            model.scene.position.set(-(x * 2 - 1), -(y * 2 - 1), 0);
+            //model.position.setX(x * 2 - 1);
+            //model.position.setY(y * 2 - 1);
+        }
+    }
+}
+
 function drawBones(frame) {
     if (frame.displayBones) {
-        if (drawBones.length > 0) {
+        if (bones_drawn.length > 0) {
             scene.remove(...bones_drawn);
         }
         for (const [key, bone] of Object.entries(frame.displayBones)) {
@@ -260,6 +273,10 @@ var animate = function () {
             for (const [k, v] of Object.entries(res)) {
                 model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
             }
+        }
+        let pos = pose_frames.getInterpolatedPosition(new Date().getTime() - SAMPLING_INTERVAL_MS);
+        if (pos) {
+            model.scene.position.set(-(pos[0] * 2 - 1), -(pos[1] * 2 - 1), 0);
         }
         model.update( deltaTime );
     }

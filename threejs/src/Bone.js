@@ -49,6 +49,31 @@ export class FrameBuffer {
         return (new Quaternion()).multiplyQuaternions(this.init_quats[k], deltaLocalRot).normalize();
     }
 
+    getInterpolatedPosition(time) {
+        // lerp positions
+        let [f1, f2] = this.getFrames(time);
+        if (f1 == null) {
+            return null;
+        }
+        assert(f1.time < f2.time, "BAD FRAMES OH BOY");
+        let t = (time - f1.time) / (f2.time - f1.time);
+        // console.log("t value ", t);
+        assert(t >= 0, "HOW IS T NEGATIVE TF");
+
+        // Return dictionary that maps the boneHelper bone idx to the slerped deltaQuat to multiply by
+        let hip_1 = f1.displayBones["hips"]
+        let hip_2 = f2.displayBones["hips"]
+        let x_1 = (hip_1.cur[0].x + hip_1.cur[1].x) / (2 * 640);
+        let y_1 = (hip_1.cur[0].y + hip_1.cur[1].y) / (2 * 480);
+        let x_2 = (hip_2.cur[0].x + hip_2.cur[1].x) / (2 * 640);
+        let y_2 = (hip_2.cur[0].y + hip_2.cur[1].y) / (2 * 480);
+
+        console.log(x_c, y_c);
+        let x_c = x_1 * (1 - t) + x_2 * t;
+        let y_c = y_1 * (1 - t) + y_2 * t;
+        return [x_c, y_c];
+    }
+
     // get the state of the skeleton (positions, rotations) after interpolation
     // interpolated between two frames
     getInterpolatedState(time, modelDict) {
