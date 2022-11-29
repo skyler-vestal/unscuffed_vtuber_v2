@@ -15,6 +15,8 @@ import Stats from 'stats.js'
 import { meshgrid } from '@tensorflow/tfjs-core';
 import * as dat from 'dat.gui';
 
+import { TTFLoader } from 'three/examples/jsm/loaders/TTFLoader';
+
 class TrackManager {
     constructor(tracks) {
         this.tracks = tracks;
@@ -161,7 +163,46 @@ const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(2, 2, 5);
 scene.add(light);
 
+// race condition, need to wait for the things to finish loading
+var manager = new THREE.LoadingManager();  
 
+manager.onLoad = () => renderFont();
+
+// TODO: make sprites to represent certain poses 
+var map = new THREE.TextureLoader().load( "./hamtaro.png" );
+var material = new THREE.SpriteMaterial( { map: map, color: 0xffffff } );
+var sprite = new THREE.Sprite( material );
+sprite.translateX(1);
+scene.add( sprite );
+
+// approaching pose
+setInterval(() => sprite.translateX(0.001), 1);  
+
+const fontLoader = new THREE.FontLoader(manager);
+const ttfLoader = new TTFLoader(manager);
+var font;
+ttfLoader.load('fonts/Happiness.ttf', (json) => {
+    const happinessFont = fontLoader.parse(json);
+    font = happinessFont;
+    console.log(font);
+});
+
+function renderFont() { // when all resources are loaded
+    console.log(font);
+    const textGeometry = new THREE.TextGeometry('No current track.', {
+        height: 0,
+        size: 0.1,
+        font: font
+    });
+    const textMaterial = new THREE.MeshNormalMaterial();
+    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+    textMesh.scale.x = -1;
+    textMesh.position.x = 1.2;
+    textMesh.position.y = 0;
+    scene.add(textMesh);
+}
+
+// load different poses
 var loader = new GLTFLoader();
 var model;
 var player;
