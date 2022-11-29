@@ -148,6 +148,7 @@ var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHe
 
 // Video stream
 const video = document.getElementById('video');
+console.log(video)
 
 var renderer = new THREE.WebGLRenderer({ alpha: true });
 renderer.setClearAlpha(0.0);
@@ -329,7 +330,12 @@ var animate = function () {
 animate();
 
 
-window.addEventListener('DOMContentLoaded', enableCam);
+window.addEventListener('DOMContentLoaded', enableVideo);
+
+function enableVideo(event) {
+    predictWebcam();
+    //video.addEventListener('loadeddata', predictWebcam);
+}
 
 // Enable the live webcam view and start classification.
 function enableCam(event) {    

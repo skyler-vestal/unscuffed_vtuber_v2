@@ -68,7 +68,7 @@ export class FrameBuffer {
         let x_2 = (hip_2.cur[0].x + hip_2.cur[1].x) / (2 * 640);
         let y_2 = (hip_2.cur[0].y + hip_2.cur[1].y) / (2 * 480);
 
-        console.log(x_c, y_c);
+        return null;
         let x_c = x_1 * (1 - t) + x_2 * t;
         let y_c = y_1 * (1 - t) + y_2 * t;
         return [x_c, y_c];
