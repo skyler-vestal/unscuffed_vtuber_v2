@@ -63,7 +63,9 @@ export class FrameBuffer {
         // Return dictionary that maps the boneHelper bone idx to the slerped deltaQuat to multiply by
         let hip_1 = f1.displayBones["hips"]
         let hip_2 = f2.displayBones["hips"]
-        console.log(hip_1.cur[0])
+        if (Math.min(...hip_1.cur_score, ...hip_2.cur_score) < MIN_VALID_SCORE) {
+            return null;
+        }
         let x_1 = (hip_1.cur[0].x + hip_1.cur[1].x) / (2 * video.width);
         let y_1 = (hip_1.cur[0].y + hip_1.cur[1].y) / (2 * video.height);
         let x_2 = (hip_2.cur[0].x + hip_2.cur[1].x) / (2 * video.width);
@@ -124,9 +126,6 @@ export class FrameBuffer {
             let curTangent_f1 = curBone_f1.getTangent().normalize();
             let relTangent_f2 = relBone_f2.getTangent().multiplyScalar(scale).normalize();
             let curTangent_f2 = curBone_f2.getTangent().normalize();
-            // console.log("curTangent_f1: ", curTangent_f1);
-            // console.log("curTangent_f2: ", curTangent_f2);
-            //console.log(curBone_f1.getTangent().angleTo(curBone_f2.getTangent()) * 180 / Math.PI);
             // only push quaternions where both BlazePose bone endpoints passing the valid score threshold
             let deltaQuat_f1;
             let deltaQuat_f2;

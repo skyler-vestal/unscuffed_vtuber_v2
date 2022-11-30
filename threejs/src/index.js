@@ -338,7 +338,7 @@ function enableVideo(event) {
     source.width = 270;
     source.height = 480;
     video.appendChild(source);
-    video.play();
+    //video.play();
     predictWebcam();
 }
 
@@ -351,6 +351,7 @@ function enableCam(event) {
   
     video.width = 640;
     video.height = 480;
+    //video.autoplay = true;
     // Activate the webcam stream.
     navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
         video.srcObject = stream;
@@ -372,7 +373,10 @@ async function predictWebcam() {
     body_detector = await poseDetection.createDetector(body_model, bodyConfig);
 
     setInterval(async function detectPoses() { 
-        const poses = await body_detector.estimatePoses(video);     
+        const poses = await body_detector.estimatePoses(video);  
+        if (video.paused) {
+            video.play();
+        }
         if (body_detector && video && poses && poses[0]) {
             // update current state
             if (pose_frames) {
