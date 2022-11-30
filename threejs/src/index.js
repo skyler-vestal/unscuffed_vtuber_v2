@@ -43,6 +43,10 @@ class TrackManager {
     }
 
     stop() {
+        video.removeAttribute('src');
+        video.pause();
+        video.currentTime = 0;        
+
         this.current_track.stop();
         this.current_track = null;
         this.update_game_state();
@@ -50,12 +54,27 @@ class TrackManager {
 
     update_game_state() {
         if (this.current_track) {
+
+            video.removeChild(source);
+            source.setAttribute('src', this.current_track.video_path);
+
+            video.pause();
+            video.currentTime = 0;
+
+            video.appendChild(source);
+            predictWebcam();
+
             let countdown_sec = 3;
             let interval_id = setInterval(() => {
                 if (countdown_sec === 0) {
                     // Track has started
                     console.log("track started");
                     renderText('Now playing "' + this.current_track.name + '"');
+
+
+                    video.play();
+                    
+
                     this.current_track.play();
                     window.clearInterval(interval_id);
                 } else {
@@ -70,9 +89,10 @@ class TrackManager {
 }
 
 class Track {
-    constructor(name, audio_path) {
+    constructor(name, audio_path, video_path) {
         this.name = name;
         this.audio = new Audio(audio_path);
+        this.video_path = video_path;
     }
 
     play() {
@@ -88,11 +108,12 @@ class Track {
 var tm = new TrackManager([
     // Add new tracks here.
     // new Track("Your track name", "relative/path/in/static/resources/directory")
-    new Track("Sasuke", "/music/sasuke.mp3")
+    new Track("Sasuke", "/music/sasuke.mp3", "/videos/sasuke.mp4")
 ]);
 
 // STREAM
 const WEBCAM_ENABLED = false;
+var source; // video source
 
 // GUI
 const gui = new dat.GUI();
@@ -357,15 +378,16 @@ window.addEventListener('DOMContentLoaded', WEBCAM_ENABLED ? enableCam : enableV
 
 function enableVideo(event) {
     //video.addEventListener('loadeddata', predictWebcam);
-    var source = document.createElement('source');
-    source.setAttribute('src', '/videos/sasuke.mp4');
+    // declared at top of file
+    source = document.createElement('source');
+    // source.setAttribute('src', '/videos/sasuke.mp4');
     video.width = 270;
     video.height = 480;
     source.width = 270;
     source.height = 480;
     video.appendChild(source);
-    video.play();
-    predictWebcam();
+    // video.play();
+    // predictWebcam();
 }
 
 // Enable the live webcam view and start classification.
