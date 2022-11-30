@@ -294,6 +294,7 @@ function drawBones(frame) {
 }
 
 const clock = new THREE.Clock();
+var init_time = (new Date()).getTime();
 
 var animate = function () {
     // setTimeout( function() {
@@ -303,20 +304,20 @@ var animate = function () {
     stats.begin()
     const deltaTime = clock.getDelta();
     if (pose_frames && hand_frames && model && pose_started && hand_started) {
-        let res = pose_frames.getInterpolatedState(new Date().getTime() - SAMPLING_INTERVAL_MS, modelToRealMap);
+        let res = pose_frames.getInterpolatedState((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS, modelToRealMap);
         if (res) {
             for (const [k, v] of Object.entries(res)) {
                 model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
             }
         }
         drawBones(pose_frames.getLastFrame());
-        res = hand_frames.getInterpolatedState(new Date().getTime() - SAMPLING_INTERVAL_MS, modelToRealMap);
+        res = hand_frames.getInterpolatedState((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS, modelToRealMap);
         if (res) {
             for (const [k, v] of Object.entries(res)) {
                 model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
             }
         }
-        let pos = pose_frames.getInterpolatedPosition(new Date().getTime() - SAMPLING_INTERVAL_MS);
+        let pos = pose_frames.getInterpolatedPosition((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS);
         if (pos) {
             model.scene.position.set(-(pos[0] * 2 - 1), -(pos[1] * 2 - 1), 0);
         }
@@ -377,7 +378,13 @@ async function predictWebcam() {
         if (body_detector && video && poses && poses[0]) {
             // update current state
             if (pose_frames) {
-                let new_frame = new Frame(poseMapBones, [poses[0].keypoints3D], [poses[0].keypoints]);
+                if (!pose_frames.frames[0]) {
+                    init_time = (new Date()).getTime();
+                    console.log("init_time: ", init_time);  
+                }
+                //console.log("elapsed_time: ", (new Date()).getTime() - init_time);
+                let new_frame = new Frame(poseMapBones, [poses[0].keypoints3D], [poses[0].keypoints], (new Date()).getTime() - init_time);
+                
                 pose_frames.add(new_frame);
                 pose_started = true;
             }
@@ -401,7 +408,7 @@ async function predictWebcam() {
                         hand_display_data[i][j].score = hands[i].score;
                     }
                 }
-                hand_frames.add(new Frame(handMapBones, hand_data));
+                hand_frames.add(new Frame(handMapBones, hand_data, (new Date()).getTime() - init_time));
                 hand_started = true;
             }
         }
