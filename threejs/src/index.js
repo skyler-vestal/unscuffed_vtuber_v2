@@ -29,9 +29,9 @@ class TrackManager {
         for (let i = 0; i < this.tracks.length; i++) {
             if (track_name === this.tracks[i].name) {
                 this.current_track = this.tracks[i];
-                this.current_track.play();
+                
 
-                console.log("Now playing " + track_name);
+                this.update_game_state();
                 return;
             }
         }
@@ -40,6 +40,32 @@ class TrackManager {
 
     get_track_names() {
         return Array.from(this.tracks, t => t.name);
+    }
+
+    stop() {
+        this.current_track.stop();
+        this.current_track = null;
+        this.update_game_state();
+    }
+
+    update_game_state() {
+        if (this.current_track) {
+            let countdown_sec = 3;
+            let interval_id = setInterval(() => {
+                if (countdown_sec === 0) {
+                    // Track has started
+                    console.log("track started");
+                    renderText('Now playing "' + this.current_track.name + '"');
+                    this.current_track.play();
+                    window.clearInterval(interval_id);
+                } else {
+                    renderText('Playing "' + this.current_track.name + '" in ' + countdown_sec + (countdown_sec == 1 ? " second" : " seconds"));
+                    countdown_sec--;
+                }
+            }, 1000);
+        } else {
+            renderText('No current track.');
+        }
     }
 }
 
@@ -75,14 +101,13 @@ gameplay_options.open();
 var controller;
 var gui_options = {
     'Track': 'Select a Track.',
-    'Play!': function () {
-        tm.play(controller.getValue())
-    }
+    'Play!': () => tm.play(controller.getValue()),
+    'Stop': () => tm.stop()
 };
 
 controller = gameplay_options.add( gui_options, 'Track', tm.get_track_names());
-
 gameplay_options.add( gui_options, 'Play!' );
+gameplay_options.add( gui_options, 'Stop' );
 
 const SAMPLING_INTERVAL_MS = 25; 
 const FRAME_BUFFER_SIZE = 500;
@@ -170,36 +195,36 @@ scene.add(light);
 // race condition, need to wait for the things to finish loading
 var manager = new THREE.LoadingManager();  
 
-manager.onLoad = () => renderFont();
+manager.onLoad = () => renderText("No current track.");
 
 // TODO: make sprites to represent certain poses 
-var map = new THREE.TextureLoader().load( "./hamtaro.png" );
-var material = new THREE.SpriteMaterial( { map: map, color: 0xffffff } );
-var sprite = new THREE.Sprite( material );
-sprite.translateX(1);
-scene.add( sprite );
+// var map = new THREE.TextureLoader().load( "./hamtaro.png" );
+// var material = new THREE.SpriteMaterial( { map: map, color: 0xffffff } );
+// var sprite = new THREE.Sprite( material );
+// sprite.translateX(1);
+// scene.add( sprite );
 
 // approaching pose
-setInterval(() => sprite.translateX(0.001), 1);  
+// setInterval(() => sprite.translateX(0.001), 1);  
 
 const fontLoader = new THREE.FontLoader(manager);
 const ttfLoader = new TTFLoader(manager);
 var font;
+var textMesh;
 ttfLoader.load('fonts/Happiness.ttf', (json) => {
     const happinessFont = fontLoader.parse(json);
     font = happinessFont;
     console.log(font);
 });
-
-function renderFont() { // when all resources are loaded
-    console.log(font);
-    const textGeometry = new THREE.TextGeometry('No current track.', {
+function renderText(text) { // when all resources are loaded
+    if (textMesh) scene.remove(textMesh);
+    const textGeometry = new THREE.TextGeometry(text, {
         height: 0,
         size: 0.1,
         font: font
     });
     const textMaterial = new THREE.MeshNormalMaterial();
-    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+    textMesh = new THREE.Mesh(textGeometry, textMaterial);
     textMesh.scale.x = -1;
     textMesh.position.x = 1.2;
     textMesh.position.y = 0;
