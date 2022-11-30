@@ -63,12 +63,12 @@ export class FrameBuffer {
         // Return dictionary that maps the boneHelper bone idx to the slerped deltaQuat to multiply by
         let hip_1 = f1.displayBones["hips"]
         let hip_2 = f2.displayBones["hips"]
-        let x_1 = (hip_1.cur[0].x + hip_1.cur[1].x) / (2 * 640);
-        let y_1 = (hip_1.cur[0].y + hip_1.cur[1].y) / (2 * 480);
-        let x_2 = (hip_2.cur[0].x + hip_2.cur[1].x) / (2 * 640);
-        let y_2 = (hip_2.cur[0].y + hip_2.cur[1].y) / (2 * 480);
+        console.log(hip_1.cur[0])
+        let x_1 = (hip_1.cur[0].x + hip_1.cur[1].x) / (2 * video.width);
+        let y_1 = (hip_1.cur[0].y + hip_1.cur[1].y) / (2 * video.height);
+        let x_2 = (hip_2.cur[0].x + hip_2.cur[1].x) / (2 * video.width);
+        let y_2 = (hip_2.cur[0].y + hip_2.cur[1].y) / (2 * video.height);
 
-        return null;
         let x_c = x_1 * (1 - t) + x_2 * t;
         let y_c = y_1 * (1 - t) + y_2 * t;
         return [x_c, y_c];

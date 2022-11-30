@@ -65,6 +65,9 @@ var tm = new TrackManager([
     new Track("Sasuke", "/music/sasuke.mp3")
 ]);
 
+// STREAM
+const WEBCAM_ENABLED = true;
+
 // GUI
 const gui = new dat.GUI();
 var gameplay_options = gui.addFolder('Gameplay Options');
@@ -81,7 +84,7 @@ controller = gameplay_options.add( gui_options, 'Track', tm.get_track_names());
 
 gameplay_options.add( gui_options, 'Play!' );
 
-const SAMPLING_INTERVAL_MS = 50; 
+const SAMPLING_INTERVAL_MS = 25; 
 const FRAME_BUFFER_SIZE = 500;
 var pose_frames; // circular buffer of frames initialized in gltf load
 var hand_frames;
@@ -303,21 +306,15 @@ var animate = function () {
 
     stats.begin()
     const deltaTime = clock.getDelta();
-    if (pose_frames && hand_frames && model && pose_started && hand_started) {
-        let res = pose_frames.getInterpolatedState((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS, modelToRealMap);
+    if (pose_frames && model && pose_started) {
+        let res = pose_frames.getInterpolatedState(new Date().getTime() - SAMPLING_INTERVAL_MS, modelToRealMap);
         if (res) {
             for (const [k, v] of Object.entries(res)) {
                 model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
             }
         }
         drawBones(pose_frames.getLastFrame());
-        res = hand_frames.getInterpolatedState((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS, modelToRealMap);
-        if (res) {
-            for (const [k, v] of Object.entries(res)) {
-                model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
-            }
-        }
-        let pos = pose_frames.getInterpolatedPosition((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS);
+        let pos = pose_frames.getInterpolatedPosition(new Date().getTime() - SAMPLING_INTERVAL_MS);
         if (pos) {
             model.scene.position.set(-(pos[0] * 2 - 1), -(pos[1] * 2 - 1), 0);
         }
@@ -331,11 +328,19 @@ var animate = function () {
 animate();
 
 
-window.addEventListener('DOMContentLoaded', enableVideo);
+window.addEventListener('DOMContentLoaded', WEBCAM_ENABLED ? enableCam : enableVideo);
 
 function enableVideo(event) {
-    predictWebcam();
     //video.addEventListener('loadeddata', predictWebcam);
+    var source = document.createElement('source');
+    source.setAttribute('src', '/videos/sasuke.mp4');
+    video.width = 270;
+    video.height = 480;
+    source.width = 270;
+    source.height = 480;
+    video.appendChild(source);
+    video.play();
+    predictWebcam();
 }
 
 // Enable the live webcam view and start classification.
@@ -345,6 +350,8 @@ function enableCam(event) {
         video: true
     };
   
+    video.width = 640;
+    video.height = 480;
     // Activate the webcam stream.
     navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
         video.srcObject = stream;
@@ -360,18 +367,10 @@ async function predictWebcam() {
     const bodyConfig = {
         runtime: 'mediapipe',
         solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose',
-        modelType: 'full'
+        modelType: 'lite'
                         // or 'base/node_modules/@mediapipe/pose' in npm.
     };
     body_detector = await poseDetection.createDetector(body_model, bodyConfig);
-
-    const hand_model = handPoseDetection.SupportedModels.MediaPipeHands;
-    const handConfig = {
-        runtime: 'mediapipe', // or 'tfjs',
-        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
-        modelType: 'full'
-    }
-    hand_detector = await handPoseDetection.createDetector(hand_model, handConfig);
 
     setInterval(async function detectPoses() { 
         const poses = await body_detector.estimatePoses(video);     
@@ -387,29 +386,6 @@ async function predictWebcam() {
                 
                 pose_frames.add(new_frame);
                 pose_started = true;
-            }
-        }
-    }, SAMPLING_INTERVAL_MS);
-
-    setInterval(async function detectHands() { 
-        const hands = await hand_detector.estimateHands(video);
-        if (hand_detector && video && hands && hands.length > 0) {
-            if (hand_frames) {
-                let hand_data = [];
-                let hand_display_data = [];
-                // only push data for hands detected
-                for (let i = 0; i < hands.length && i < 2; i++) {
-                    hand_data.push(hands[i].keypoints3D);
-                    hand_display_data.push(hands[i].keypoints);
-                    hand_data[i].handedness = hands[i].handedness;
-                    hand_display_data[i].handedness = hands[i].handedness;
-                    for (let j = 0; j < hand_data[i].length; j++) {
-                        hand_data[i][j].score = hands[i].score;
-                        hand_display_data[i][j].score = hands[i].score;
-                    }
-                }
-                hand_frames.add(new Frame(handMapBones, hand_data, (new Date()).getTime() - init_time));
-                hand_started = true;
             }
         }
     }, SAMPLING_INTERVAL_MS);
