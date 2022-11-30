@@ -66,7 +66,7 @@ var tm = new TrackManager([
 ]);
 
 // STREAM
-const WEBCAM_ENABLED = true;
+const WEBCAM_ENABLED = false;
 
 // GUI
 const gui = new dat.GUI();
@@ -307,14 +307,14 @@ var animate = function () {
     stats.begin()
     const deltaTime = clock.getDelta();
     if (pose_frames && model && pose_started) {
-        let res = pose_frames.getInterpolatedState(new Date().getTime() - SAMPLING_INTERVAL_MS, modelToRealMap);
+        let res = pose_frames.getInterpolatedState((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS, modelToRealMap);
         if (res) {
             for (const [k, v] of Object.entries(res)) {
                 model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
             }
         }
         drawBones(pose_frames.getLastFrame());
-        let pos = pose_frames.getInterpolatedPosition(new Date().getTime() - SAMPLING_INTERVAL_MS);
+        let pos = pose_frames.getInterpolatedPosition((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS);
         if (pos) {
             model.scene.position.set(-(pos[0] * 2 - 1), -(pos[1] * 2 - 1), 0);
         }
