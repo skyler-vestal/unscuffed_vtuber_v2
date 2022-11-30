@@ -82,7 +82,7 @@ export class FrameBuffer {
         // lerp positions
         // slerp rotations
         let [f1, f2] = this.getFrames(time);
-        if (f1 == null) {
+        if (f1 == null || f2 == null) {
             return null;
         }
         assert(f1.time < f2.time, "BAD FRAMES OH BOY");
@@ -196,6 +196,33 @@ export class FrameBuffer {
         // potential for oldest frame in arr?
         assert(this.frames[idx] != null); 
         return this.frames[idx];
+    }
+}
+
+// Reuses circular buffer for normal array with same quaternion math stuff.
+export class SavedFrames extends FrameBuffer {
+
+    constructor(size, init_quats, init_inv_quats) { 
+        super(size, init_quats, init_inv_quats);
+        this.savedPos = 0;
+    }
+
+    getFrames(time) {
+        var idx = this.__get_idx__(time);
+        return idx ? [this.frames[Math.max(0, idx - 1)], this.frames[idx]] : [null, null];
+    }
+
+    __mod__(idx) {
+        return idx;
+    }
+
+    __get_idx__(time) {
+        for (let i = 0; i < this.size; i++) {
+            if (this.frames[i].time > time) {
+                return i - 1;
+            }
+        }
+        return null;
     }
 }
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { FrameBuffer, Frame, Bone } from './Bone.js';
+import { FrameBuffer, Frame, Bone, SavedFrames } from './Bone.js';
 import { VRMSchema } from '@pixiv/three-vrm';
 import { VRM } from '@pixiv/three-vrm';
 import '@mediapipe/pose';
@@ -85,14 +85,17 @@ controller = gameplay_options.add( gui_options, 'Track', tm.get_track_names());
 gameplay_options.add( gui_options, 'Play!' );
 
 const SAMPLING_INTERVAL_MS = 25; 
-const FRAME_BUFFER_SIZE = 500;
+const FRAME_BUFFER_SIZE = 5;
 var pose_frames; // circular buffer of frames initialized in gltf load
+var pose_frames_saved;
 var hand_frames;
 
 var pose_started = false;
 var hand_started = false;
 var blazePosePreviousState = null;
 var blazePoseCurrentState = null;
+
+var animate_init_time = -1;
 
 // Time (ms) of last blazepose update
 var lastBPUpdateMs = 0;
@@ -248,6 +251,7 @@ loader.load(
 
             pose_frames = new FrameBuffer(FRAME_BUFFER_SIZE, init_quats, init_inv_quats, SAMPLING_INTERVAL_MS)
             hand_frames = new FrameBuffer(FRAME_BUFFER_SIZE, init_quats, init_inv_quats, SAMPLING_INTERVAL_MS)
+            loadSavedFrames('/saved/sasuke.json')
 		} );
 
 	},
@@ -266,14 +270,11 @@ function vecToScreen(v) {
     return new THREE.Vector3(v.x / window.innerWidth * 2 - 1, -(v.y / window.innerHeight * 2 - 1), -1);
 }
 
-function translateModel(frame) {
-    if (frame.displayBones) {
-        let hips = frame.displayBones["hips"]
-        if (x && y) {
-            model.scene.position.set(-(x * 2 - 1), -(y * 2 - 1), 0);
-            //model.position.setX(x * 2 - 1);
-            //model.position.setY(y * 2 - 1);
-        }
+async function loadSavedFrames(file_dir) {
+    var arr = await ((await fetch(file_dir)).json());
+    pose_frames_saved = new SavedFrames(arr.length, pose_frames.init_quats, pose_frames.init_inv_quats);
+    for (const frame of arr) {
+        pose_frames_saved.add(new Frame(poseMapBones, frame["space_points"], frame["flat_points"], frame["time"]));
     }
 }
 
@@ -299,12 +300,7 @@ function drawBones(frame) {
 const clock = new THREE.Clock();
 var init_time = (new Date()).getTime();
 
-var animate = function () {
-    // setTimeout( function() {
-        requestAnimationFrame( animate );
-    // }, 500);
-
-    stats.begin()
+function animateFromStream() {
     const deltaTime = clock.getDelta();
     if (pose_frames && model && pose_started) {
         let res = pose_frames.getInterpolatedState((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS, modelToRealMap);
@@ -320,7 +316,33 @@ var animate = function () {
         }
         model.update( deltaTime );
     }
-    
+}
+
+function animateFromFile() {
+    const deltaTime = clock.getDelta();
+    if (model && pose_frames_saved) {
+        if (animate_init_time == -1) {
+            animate_init_time = new Date().getTime();
+            video.play();
+        }
+        let res = pose_frames_saved.getInterpolatedState((new Date()).getTime() - animate_init_time, modelToRealMap);
+        if (res) {
+            for (const [k, v] of Object.entries(res)) {
+                model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
+            }
+        }
+        model.update(deltaTime);
+    }
+}
+
+var animate = function () {
+    //setTimeout(function() {
+        requestAnimationFrame( animate )
+    //}, 500);
+
+    stats.begin()
+    animateFromFile();
+    //animateFromStream();
 	renderer.render( scene, camera );
     stats.end()
 };
@@ -331,16 +353,17 @@ animate();
 window.addEventListener('DOMContentLoaded', WEBCAM_ENABLED ? enableCam : enableVideo);
 
 function enableVideo(event) {
-    //video.addEventListener('loadeddata', predictWebcam);
     var source = document.createElement('source');
+    video.addEventListener('ended', endRecording);
     source.setAttribute('src', '/videos/sasuke.mp4');
     video.width = 270;
     video.height = 480;
     source.width = 270;
     source.height = 480;
     video.appendChild(source);
-    //video.play();
-    predictWebcam();
+    video_ended = false;
+    saved_frames = [];
+    //predictWebcam();
 }
 
 // Enable the live webcam view and start classification.
@@ -352,7 +375,7 @@ function enableCam(event) {
   
     video.width = 640;
     video.height = 480;
-    //video.autoplay = true;
+    video.autoplay = true;
     // Activate the webcam stream.
     navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
         video.srcObject = stream;
@@ -363,6 +386,15 @@ function enableCam(event) {
 // BlazePose detection
 var body_detector;
 var hand_detector;
+var video_ended = false;
+
+var saved_frames = [];
+function endRecording(event) {
+    video.pause();
+    video_ended = true;
+    console.log(JSON.stringify(saved_frames));
+}
+
 async function predictWebcam() {
     const body_model = poseDetection.SupportedModels.BlazePose;
     const bodyConfig = {
@@ -374,22 +406,26 @@ async function predictWebcam() {
     body_detector = await poseDetection.createDetector(body_model, bodyConfig);
 
     setInterval(async function detectPoses() { 
-        const poses = await body_detector.estimatePoses(video);  
-        if (video.paused) {
-            video.play();
-        }
-        if (body_detector && video && poses && poses[0]) {
-            // update current state
-            if (pose_frames) {
-                if (!pose_frames.frames[0]) {
-                    init_time = (new Date()).getTime();
-                    console.log("init_time: ", init_time);  
+        if (!video_ended) {
+            const poses = await body_detector.estimatePoses(video); 
+            if (video.paused) {
+                video.play();
+            }
+            if (body_detector && video && poses && poses[0]) {
+                // update current state
+                if (pose_frames) {
+                    if (!pose_frames.frames[0]) {
+                        init_time = (new Date()).getTime(); 
+                    }
+                    // Set the time as 0 for the first frame
+                    let new_frame = new Frame(poseMapBones, [poses[0].keypoints3D], [poses[0].keypoints], 
+                        pose_frames.frames[0] ? (new Date()).getTime() - init_time : 0);
+                    saved_frames.push({"space_points": [poses[0].keypoints3D], 
+                                    "flat_points": [poses[0].keypoints], 
+                                    "time": (new Date()).getTime() - init_time});
+                    pose_frames.add(new_frame);
+                    pose_started = true;
                 }
-                //console.log("elapsed_time: ", (new Date()).getTime() - init_time);
-                let new_frame = new Frame(poseMapBones, [poses[0].keypoints3D], [poses[0].keypoints], (new Date()).getTime() - init_time);
-                
-                pose_frames.add(new_frame);
-                pose_started = true;
             }
         }
     }, SAMPLING_INTERVAL_MS);
