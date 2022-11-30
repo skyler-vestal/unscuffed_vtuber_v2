@@ -175,7 +175,7 @@ export class FrameBuffer {
                 return cur_idx;
             }
         }   
-        assert(false, "Never found a lesser time");
+        assert(false, "Never found a lesser time" + time);
     }
 
     add(frame) {
@@ -200,8 +200,9 @@ export class FrameBuffer {
 }
 
 export class Frame {
-    constructor(pointMap, keypoints_arr, keypoints_2d_arr=null) {
-        this.time = (new Date()).getTime(); // ms
+    constructor(pointMap, keypoints_arr, keypoints_2d_arr=null, elapsed_time) {
+        this.time = elapsed_time //(new Date()).getTime(); // ms 
+        //console.log("Time: ", this.time);
         this.bones = new Object();
         this.displayBones = new Object();
         if (keypoints_arr !== null && keypoints_arr.length > 0) {
