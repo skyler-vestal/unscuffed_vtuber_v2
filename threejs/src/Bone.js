@@ -1,8 +1,7 @@
 import { assert } from '@tensorflow/tfjs-core/dist/util_base';
 import { Vector2, Vector3, Quaternion, Matrix4, Euler, Matrix3, OneMinusDstAlphaFactor } from 'three';
 import { getRotationBetweenVec, getAngleBetween3Points, clamp, negateQuatW } from './utils';
-import * as THREE from 'three';
-import { assertValidResolution } from '@tensorflow-models/posenet/dist/util';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const MIN_VALID_SCORE = 0.65;
 

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FrameBuffer, Frame, Bone, SavedFrames } from './Bone.js';
+import { BaseModel } from './BaseModel.js';
 import { VRMSchema } from '@pixiv/three-vrm';
 import { VRM } from '@pixiv/three-vrm';
 import '@mediapipe/pose';
@@ -62,7 +63,7 @@ class TrackManager {
             video.currentTime = 0;
 
             video.appendChild(source);
-            predictWebcam();
+            //predictWebcam();
 
             let countdown_sec = 3;
             let interval_id = setInterval(() => {
@@ -255,49 +256,8 @@ var init_quats = [];
 var init_inv_quats = [];
 let bones_drawn = [];
 
-loader.load(
-
-	// URL of the VRM you want to load
-	'/models/Ashtra.vrm',
-
-	// called when the resource is loaded
-	( gltf ) => {
-
-		// generate a VRM instance from gltf
-		VRM.from( gltf ).then( ( vrm ) => {
-
-			// add the loaded vrm to the scene
-            model = vrm;
-
-			scene.add( vrm.scene );
-            boneHelper = new THREE.SkeletonHelper( vrm.scene );
-            console.log(boneHelper);
-
-			// deal with vrm features
-			console.log( vrm );
-
-            for (let bone_enum in VRMSchema.HumanoidBoneName) {
-                let bone_name = VRMSchema.HumanoidBoneName[bone_enum];
-                let bone = model.humanoid.getBoneNode(bone_name);
-                // is this fine?
-                if (bone) {
-                    init_quats[bone_name] = (new Quaternion()).copy(bone.quaternion);
-                    init_inv_quats[bone_name] = bone.getWorldQuaternion(new THREE.Quaternion()).invert();
-                }
-            }
-
-            pose_frames = new FrameBuffer(FRAME_BUFFER_SIZE, init_quats, init_inv_quats, SAMPLING_INTERVAL_MS)
-            hand_frames = new FrameBuffer(FRAME_BUFFER_SIZE, init_quats, init_inv_quats, SAMPLING_INTERVAL_MS)
-            loadSavedFrames('/saved/sasuke.json')
-		} );
-
-	},
-	// called while loading is progressing
-	( progress ) => console.log( 'Loading model...', 100.0 * ( progress.loaded / progress.total ), '%' ),
-	// called when loading has errors
-	( error ) => console.error( error )
-);
-
+// just testing the base model works
+var tmp_model = new BaseModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0));
 
 const disp_material = new THREE.LineBasicMaterial({
     color: 0xffffff
@@ -369,14 +329,15 @@ function animateFromFile() {
 }
 
 var animate = function () {
-    //setTimeout(function() {
+    setTimeout(function() {
         requestAnimationFrame( animate )
-    //}, 500);
+    }, 500);
 
     stats.begin()
-    animateFromFile();
+    tmp_model.update(clock.getDelta());
+    //animateFromFile();
     //animateFromStream();
-	renderer.render( scene, camera );
+	renderer.render(scene, camera);
     stats.end()
 };
 
@@ -425,6 +386,7 @@ function endRecording(event) {
     video.pause();
     video_ended = true;
     console.log(JSON.stringify(saved_frames));
+    tm.stop();
 }
 
 async function predictWebcam() {
