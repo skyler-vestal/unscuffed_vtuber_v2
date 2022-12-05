@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FrameBuffer, Frame, Bone, SavedFrames } from './Bone.js';
 import { BaseModel } from './BaseModel.js';
 import { PlaybackModel } from './PlaybackModel.js';
+import { PlayerModel } from './PlayerModel.js';
 import { VRMSchema } from '@pixiv/three-vrm';
 import { VRM } from '@pixiv/three-vrm';
 import '@mediapipe/pose';
@@ -115,7 +116,8 @@ var tm = new TrackManager([
 ]);
 
 // STREAM
-const WEBCAM_ENABLED =  false;
+//const WEBCAM_ENABLED =  false;
+const WEBCAM_ENABLED = true;
 var source; // video source
 
 // GUI
@@ -258,7 +260,8 @@ var init_inv_quats = [];
 let bones_drawn = [];
 
 // just testing the base model works
-var tmp_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones, modelToRealMap);
+//var tmp_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones, modelToRealMap);
+var tmp_model = new PlayerModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones);
 
 const disp_material = new THREE.LineBasicMaterial({
     color: 0xffffff
@@ -330,12 +333,12 @@ function animateFromFile() {
 }
 
 var animate = function () {
-    setTimeout(function() {
+    //setTimeout(function() {
         requestAnimationFrame( animate )
-    }, 500);
+    //}, 100);
 
     stats.begin()
-    tmp_model.update(clock.getDelta(), (new Date()).getTime() - animate_init_time);
+    tmp_model.update(clock.getDelta(), modelToRealMap);
     //animateFromFile();
     //animateFromStream();
 	renderer.render(scene, camera);
@@ -360,6 +363,17 @@ function enableVideo(event) {
     //predictWebcam();
 }
 
+function get_detector() {
+    const body_model = poseDetection.SupportedModels.BlazePose;
+    const bodyConfig = {
+        runtime: 'mediapipe',
+        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose',
+        modelType: 'lite'
+                        // or 'base/node_modules/@mediapipe/pose' in npm.
+    };
+    return poseDetection.createDetector(body_model, bodyConfig);
+}
+
 // Enable the live webcam view and start classification.
 function enableCam(event) {    
     // getUsermedia parameters to force video but not audio.
@@ -373,13 +387,14 @@ function enableCam(event) {
     // Activate the webcam stream.
     navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
         video.srcObject = stream;
-        video.addEventListener('loadeddata', predictWebcam);
+        video.addEventListener('loadeddata', function() { 
+            tmp_model.add_video(video);
+            tmp_model.add_detector(get_detector());
+            tmp_model.start_detection();
+        });
     });
 }
 
-// BlazePose detection
-var body_detector;
-var hand_detector;
 var video_ended = false;
 
 var saved_frames = [];
@@ -388,40 +403,4 @@ function endRecording(event) {
     video_ended = true;
     console.log(JSON.stringify(saved_frames));
     tm.stop();
-}
-
-async function predictWebcam() {
-    const body_model = poseDetection.SupportedModels.BlazePose;
-    const bodyConfig = {
-        runtime: 'mediapipe',
-        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose',
-        modelType: 'lite'
-                        // or 'base/node_modules/@mediapipe/pose' in npm.
-    };
-    body_detector = await poseDetection.createDetector(body_model, bodyConfig);
-
-    setInterval(async function detectPoses() { 
-        if (!video_ended) {
-            const poses = await body_detector.estimatePoses(video); 
-            if (video.paused) {
-                video.play();
-            }
-            if (body_detector && video && poses && poses[0]) {
-                // update current state
-                if (pose_frames) {
-                    if (!pose_frames.frames[0]) {
-                        init_time = (new Date()).getTime(); 
-                    }
-                    // Set the time as 0 for the first frame
-                    let new_frame = new Frame(poseMapBones, [poses[0].keypoints3D], [poses[0].keypoints], 
-                        pose_frames.frames[0] ? (new Date()).getTime() - init_time : 0);
-                    saved_frames.push({"space_points": [poses[0].keypoints3D], 
-                                    "flat_points": [poses[0].keypoints], 
-                                    "time": (new Date()).getTime() - init_time});
-                    pose_frames.add(new_frame);
-                    pose_started = true;
-                }
-            }
-        }
-    }, SAMPLING_INTERVAL_MS);
 }
