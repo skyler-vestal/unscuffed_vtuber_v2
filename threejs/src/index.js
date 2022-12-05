@@ -116,8 +116,7 @@ var tm = new TrackManager([
 ]);
 
 // STREAM
-//const WEBCAM_ENABLED =  false;
-const WEBCAM_ENABLED = true;
+const WEBCAM_ENABLED = false;
 var source; // video source
 
 // GUI
@@ -260,8 +259,8 @@ var init_inv_quats = [];
 let bones_drawn = [];
 
 // just testing the base model works
-//var tmp_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones, modelToRealMap);
-var tmp_model = new PlayerModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones);
+var tmp_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones);
+//var tmp_model = new PlayerModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones);
 
 const disp_material = new THREE.LineBasicMaterial({
     color: 0xffffff

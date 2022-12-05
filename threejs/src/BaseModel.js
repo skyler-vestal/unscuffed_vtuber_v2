@@ -7,7 +7,6 @@ import { FrameBuffer, SavedFrames } from './Bone.js';
 export class BaseModel {
 
     constructor(model_file, scene, loc, frame_buffer_size = 5, sampling_interval_ms = 25) {
-        console.log('hello creating model');
         var loader = new GLTFLoader();
         this.init_quats = {};
         this.init_inv_quats = {};

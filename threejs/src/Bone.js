@@ -178,7 +178,6 @@ export class FrameBuffer {
     }
 
     add(frame) {
-        //console.log("Idx: ", this.next_idx);
         this.frames[this.next_idx] = frame;
         this.next_idx = this.__mod__(this.next_idx + 1); 
     }
@@ -216,7 +215,7 @@ export class SavedFrames extends FrameBuffer {
     }
 
     __get_idx__(time) {
-        for (let i = 0; i < this.frames.size; i++) {
+        for (let i = 0; i < this.frames.length; i++) {
             if (this.frames[i].time > time) {
                 return i - 1;
             }
