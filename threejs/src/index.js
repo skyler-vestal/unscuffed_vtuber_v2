@@ -1,11 +1,6 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { FrameBuffer, Frame, Bone, SavedFrames } from './Bone.js';
-import { BaseModel } from './BaseModel.js';
 import { PlaybackModel } from './PlaybackModel.js';
-import { PlayerModel } from './PlayerModel.js';
 import { VRMSchema } from '@pixiv/three-vrm';
-import { VRM } from '@pixiv/three-vrm';
 import '@mediapipe/pose';
 import '@mediapipe/hands';
 import '@tensorflow/tfjs-core';
@@ -15,7 +10,6 @@ import { Quaternion, Vector3, Matrix3 } from 'three';
 import '@tensorflow/tfjs-backend-webgl';
 import '@mediapipe/pose';
 import Stats from 'stats.js'
-import { meshgrid } from '@tensorflow/tfjs-core';
 import * as dat from 'dat.gui';
 
 import { TTFLoader } from 'three/examples/jsm/loaders/TTFLoader';
@@ -136,19 +130,6 @@ gameplay_options.add( gui_options, 'Stop' );
 
 const SAMPLING_INTERVAL_MS = 25; 
 const FRAME_BUFFER_SIZE = 5;
-var pose_frames; // circular buffer of frames initialized in gltf load
-var pose_frames_saved;
-var hand_frames;
-
-var pose_started = false;
-var hand_started = false;
-var blazePosePreviousState = null;
-var blazePoseCurrentState = null;
-
-var animate_init_time = -1;
-
-// Time (ms) of last blazepose update
-var lastBPUpdateMs = 0;
 
 const poseMapBones = {
     "left_up_arm": [11, 13],
@@ -234,6 +215,7 @@ ttfLoader.load('fonts/Happiness.ttf', (json) => {
     font = happinessFont;
     console.log(font);
 });
+
 function renderText(text) { // when all resources are loaded
     if (textMesh) scene.remove(textMesh);
     const textGeometry = new THREE.TextGeometry(text, {
@@ -249,13 +231,7 @@ function renderText(text) { // when all resources are loaded
     scene.add(textMesh);
 }
 
-// load different poses
-var loader = new GLTFLoader();
-var model;
-var player;
-var boneHelper;
-var init_quats = [];
-var init_inv_quats = [];
+
 let bones_drawn = [];
 
 // just testing the base model works
@@ -268,14 +244,6 @@ const disp_material = new THREE.LineBasicMaterial({
 
 function vecToScreen(v) {
     return new THREE.Vector3(v.x / window.innerWidth * 2 - 1, -(v.y / window.innerHeight * 2 - 1), -1);
-}
-
-async function loadSavedFrames(file_dir) {
-    var arr = await ((await fetch(file_dir)).json());
-    pose_frames_saved = new SavedFrames(arr.length, pose_frames.init_quats, pose_frames.init_inv_quats);
-    for (const frame of arr) {
-        pose_frames_saved.add(new Frame(poseMapBones, frame["space_points"], frame["flat_points"], frame["time"]));
-    }
 }
 
 function drawBones(frame) {
@@ -299,37 +267,6 @@ function drawBones(frame) {
 
 const clock = new THREE.Clock();
 var init_time = (new Date()).getTime();
-
-function animateFromStream() {
-    const deltaTime = clock.getDelta();
-    if (pose_frames && model && pose_started) {
-        let res = pose_frames.getInterpolatedState((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS, modelToRealMap);
-        if (res) {
-            for (const [k, v] of Object.entries(res)) {
-                model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
-            }
-        }
-        drawBones(pose_frames.getLastFrame());
-        let pos = pose_frames.getInterpolatedPosition((new Date()).getTime() - init_time - SAMPLING_INTERVAL_MS);
-        if (pos) {
-            model.scene.position.set(-(pos[0] * 2 - 1), -(pos[1] * 2 - 1), 0);
-        }
-        model.update( deltaTime );
-    }
-}
-
-function animateFromFile() {
-    const deltaTime = clock.getDelta();
-    if (model && pose_frames_saved && animate_init_time != -1) {
-        let res = pose_frames_saved.getInterpolatedState((new Date()).getTime() - animate_init_time, modelToRealMap);
-        if (res) {
-            for (const [k, v] of Object.entries(res)) {
-                model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
-            }
-        }
-        model.update(deltaTime);
-    }
-}
 
 var animate = function () {
     //setTimeout(function() {
