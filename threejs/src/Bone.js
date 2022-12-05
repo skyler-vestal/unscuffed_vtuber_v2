@@ -216,7 +216,7 @@ export class SavedFrames extends FrameBuffer {
     }
 
     __get_idx__(time) {
-        for (let i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.frames.size; i++) {
             if (this.frames[i].time > time) {
                 return i - 1;
             }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FrameBuffer, Frame, Bone, SavedFrames } from './Bone.js';
 import { BaseModel } from './BaseModel.js';
+import { PlaybackModel } from './PlaybackModel.js';
 import { VRMSchema } from '@pixiv/three-vrm';
 import { VRM } from '@pixiv/three-vrm';
 import '@mediapipe/pose';
@@ -114,7 +115,7 @@ var tm = new TrackManager([
 ]);
 
 // STREAM
-const WEBCAM_ENABLED = false;
+const WEBCAM_ENABLED =  false;
 var source; // video source
 
 // GUI
@@ -257,7 +258,7 @@ var init_inv_quats = [];
 let bones_drawn = [];
 
 // just testing the base model works
-var tmp_model = new BaseModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0));
+var tmp_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones, modelToRealMap);
 
 const disp_material = new THREE.LineBasicMaterial({
     color: 0xffffff
@@ -334,7 +335,7 @@ var animate = function () {
     }, 500);
 
     stats.begin()
-    tmp_model.update(clock.getDelta());
+    tmp_model.update(clock.getDelta(), (new Date()).getTime() - animate_init_time);
     //animateFromFile();
     //animateFromStream();
 	renderer.render(scene, camera);

@@ -7,6 +7,7 @@ import { FrameBuffer, SavedFrames } from './Bone.js';
 export class BaseModel {
 
     constructor(model_file, scene, loc, frame_buffer_size = 5, sampling_interval_ms = 25) {
+        console.log('hello creating model');
         var loader = new GLTFLoader();
         this.init_quats = []
         this.init_inv_quats = []
@@ -32,6 +33,7 @@ export class BaseModel {
                     }
         
                     this.pose_frames = new FrameBuffer(frame_buffer_size, this.init_quats, this.init_inv_quats, sampling_interval_ms)
+                    console.log('pose_frames1: ' + this.pose_frames);
                     this.hand_frames = new FrameBuffer(frame_buffer_size, this.init_quats, this.init_inv_quats, sampling_interval_ms)
                     //loadSavedFrames('/saved/sasuke.json')
                 } );
