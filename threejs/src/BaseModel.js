@@ -8,8 +8,11 @@ export class BaseModel {
 
     constructor(model_file, scene, loc, frame_buffer_size = 5, sampling_interval_ms = 25) {
         var loader = new GLTFLoader();
-        this.init_quats = []
-        this.init_inv_quats = []
+        this.init_quats = {};
+        this.init_inv_quats = {};
+        this.loc = loc;
+        this.frame_buffer_size = frame_buffer_size;
+        this.sampling_interval_ms = sampling_interval_ms;
         loader.load(
             // URL of the VRM you want to load
             model_file,
@@ -30,18 +33,18 @@ export class BaseModel {
                             this.init_inv_quats[bone_name] = bone.getWorldQuaternion(new Quaternion()).invert();
                         }
                     }
-        
-                    this.pose_frames = new FrameBuffer(frame_buffer_size, this.init_quats, this.init_inv_quats, sampling_interval_ms)
-                    this.hand_frames = new FrameBuffer(frame_buffer_size, this.init_quats, this.init_inv_quats, sampling_interval_ms)
-                    //loadSavedFrames('/saved/sasuke.json')
-                } );
-        
+                    this.on_load();
+                });
             },
             // called while loading is progressing
             (progress) => console.log('Loading model...', 100.0 * ( progress.loaded / progress.total ), '%'),
             // called when loading has errors
             (error) => console.error(error)
         );
+    }
+
+    on_load() {
+        // im so sorry
     }
 
     update(delta_time, elapsed_time) {

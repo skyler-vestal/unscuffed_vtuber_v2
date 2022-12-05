@@ -174,7 +174,7 @@ export class FrameBuffer {
                 return cur_idx;
             }
         }   
-        assert(false, "Never found a lesser time" + time);
+        assert(false, "Never found a lesser time " + time);
     }
 
     add(frame) {
