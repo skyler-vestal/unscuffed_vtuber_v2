@@ -44,7 +44,7 @@ export class BaseModel {
         );
     }
 
-    update(deltaTime) {
+    update(delta_time, elapsed_time) {
         if (this.model) {
             this.model.update(deltaTime);
         }
