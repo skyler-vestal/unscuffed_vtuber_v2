@@ -113,8 +113,10 @@ var models = ['Ashtra', 'three-vrm-girl', 'VAL']
 var cur_model = '/models/Ashtra.vrm';
 function change_models(model) {
     cur_model = '/models/' + model + '.vrm';
+    scene.clear();
+    scene.add(light);
+    tm.update_game_state();
     tmp_model = new PlaybackModel(cur_model, scene, new Vector3(0, 0, 0), poseMapBones);
-    console.log(cur_model);
 }
 
 
