@@ -257,8 +257,8 @@ let bones_drawn = [];
 
 // just testing the base model works
 var player_model = new PlayerModel(cur_model, scene, new Vector3(1, 0, .25), poseMapBones);
-window.addEventListener('PoseMadeEvent', (e) => { console.log(player_model.get_current_real_bones()); }, false);
 var playback_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(-1, 0, .25), poseMapBones);
+window.addEventListener('PoseMadeEvent', (e) => { console.log(getPosesSimilarity(player_model, playback_model)); }, false);
 
 const disp_material = new THREE.LineBasicMaterial({
     color: 0xffffff
@@ -269,8 +269,14 @@ function vecToScreen(v) {
 }
 
 function getPosesSimilarity(model_one, model_two) {
-    percent_similar = 0
-
+    var total_similar = 0
+    const frame_1 = model_one.get_current_real_bones();
+    const frame_2 = model_two.get_current_real_bones();
+    for (const [key, value] of Object.entries(poseMapBones)) {
+        const percent = frame_1[key].getTangent().angleTo(frame_2[key].getTangent()) / Math.PI;
+        total_similar += percent;
+    }
+    return total_similar / Object.keys(poseMapBones).length;
 }
 
 function drawBones(frame) {

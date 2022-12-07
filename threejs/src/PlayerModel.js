@@ -7,13 +7,13 @@ export class PlayerModel extends BaseModel {
         this.poseMapBones = poseMapBones;
         this.detectStartEvent = new Event('DetectionReady');
         this.poseMadeEvent = new Event('PoseMadeEvent');
+        this.lastFrame = null
     }
 
     update(delta_time, model_to_real_map) {
         var latest_frame = null
         if (this.model) {
             if (this.pose_frames && this.pose_started) {
-                console.log("FIRST TIME:", (new Date()).getTime() - this.init_time - this.sampling_interval_ms);
                 let res = this.pose_frames.getInterpolatedState((new Date()).getTime() - this.init_time - this.sampling_interval_ms, model_to_real_map);
                 if (res) {
                     for (const [k, v] of Object.entries(res)) {
@@ -49,14 +49,7 @@ export class PlayerModel extends BaseModel {
     }
     
     get_current_real_bones() {
-        console.log("SECOND TIME:", (new Date()).getTime() - this.init_time - this.sampling_interval_ms);
-        if (this.model) {
-            if (this.pose_frames && this.pose_started) {
-                console.log((new Date()).getTime() - this.init_time - this.sampling_interval_ms);
-                let frame_ret = this.pose_frames.getFrames((new Date()).getTime() - this.init_time - this.sampling_interval_ms);
-                return frame_ret[0].bones;
-            }
-        }
+        return this.lastFrame.bones;
     }
 
     async detectPoses() {
@@ -74,6 +67,7 @@ export class PlayerModel extends BaseModel {
                 let new_frame = new Frame(this.poseMapBones, [poses[0].keypoints3D], [poses[0].keypoints], 
                     this.pose_frames.frames[0] ? (new Date()).getTime() - this.init_time : 0);
                 this.pose_frames.add(new_frame);
+                this.lastFrame = new_frame;
                 this.pose_started = true;
             }
         }

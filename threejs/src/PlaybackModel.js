@@ -27,6 +27,10 @@ export class PlaybackModel extends BaseModel {
         this.playing = true;
     }
 
+    get_current_real_bones() {
+        return this.pose_frames_saved.getFrames((new Date()).getTime() - this.init_time)[0].bones;
+    }
+
     // Called each time ThreeJS wants a new frame!
     // This means we should take the elapsed time to determine which frames we
     // should interpolate between, and how far between the two frames we should interpolate
