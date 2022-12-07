@@ -6,7 +6,7 @@ import '@mediapipe/hands';
 import '@tensorflow/tfjs-core';
 import * as poseDetection from '@tensorflow-models/pose-detection';
 import * as handPoseDetection from '@tensorflow-models/hand-pose-detection';
-import { Quaternion, Vector3, Matrix3 } from 'three';
+import { Quaternion, Vector3, Matrix3, GridHelper } from 'three';
 import '@tensorflow/tfjs-backend-webgl';
 import '@mediapipe/pose';
 import Stats from 'stats.js'
@@ -107,25 +107,45 @@ var tm = new TrackManager([
     new Track("Sasuke", "/music/sasuke.mp3", "/videos/sasuke.mp4")
 ]);
 
+var models = ['Ashtra', 'three-vrm-girl', 'VAL']
+var cur_model = '/models/Ashtra.vrm';
+function change_models(model) {
+    cur_model = '/models/' + model + '.vrm';
+    scene.clear();
+    scene.add(light);
+    tm.update_game_state();
+    tmp_model = new PlaybackModel(cur_model, scene, new Vector3(0, 0, 0), poseMapBones);
+}
+
+
 // STREAM
 const WEBCAM_ENABLED = true;
 const WEBCAM_WIDTH = 640;
 const WEBCAM_HEIGHT = 480;
 
 var source; // video source
+var tmp_model;
 
 // GUI
 const gui = new dat.GUI();
 var gameplay_options = gui.addFolder('Gameplay Options');
 gameplay_options.open();
-var controller;
+var track_controller;
+var model_controller;
 var gui_options = {
     'Track': 'Select a Track.',
-    'Play!': () => tm.play(controller.getValue()),
-    'Stop': () => tm.stop()
+    'Play!': () => tm.play(track_controller.getValue()),
+    'Stop': () => tm.stop(),
+    'Model': 'Select a Model',
+    'Change!' : () => change_models(model_controller.getValue()),
 };
+var model_options = gui.addFolder('Model Options');
+//model_options.open();
 
-controller = gameplay_options.add( gui_options, 'Track', tm.get_track_names());
+model_controller = model_options.add(gui_options, 'Model', models);
+model_options.add(gui_options, 'Change!');
+
+track_controller = gameplay_options.add( gui_options, 'Track', tm.get_track_names());
 gameplay_options.add( gui_options, 'Play!' );
 gameplay_options.add( gui_options, 'Stop' );
 
@@ -236,7 +256,7 @@ function renderText(text) { // when all resources are loaded
 let bones_drawn = [];
 
 // just testing the base model works
-var player_model = new PlayerModel('/models/Ashtra.vrm', scene, new Vector3(1, 0, .25), poseMapBones);
+var player_model = new PlayerModel(cur_model, scene, new Vector3(1, 0, .25), poseMapBones);
 window.addEventListener('PoseMadeEvent', (e) => { console.log(player_model.get_current_real_bones()); }, false);
 var playback_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(-1, 0, .25), poseMapBones);
 
