@@ -4,18 +4,27 @@
 		<meta charset="utf-8">
 		<title>Graphics is my passion</title>
 		<style>
-			video {
+			#webcam {
 				/* visibility: hidden; */
 				z-index: -1;
 				position: absolute;
 				top: 0;
 				left: 0;
 			}
+
+			#playback {
+				/* visibility: hidden; */
+				z-index: -1;
+				position: absolute;
+				top: 0;
+				left: 1350px;
+			}
 		</style>
 		<script src="./index.js" type="module"></script>
 	</head>
 	<body>
-		<video id="video" muted></video>
+		<video id="webcam" muted></video>
+		<video id="playback" muted></video>
 	</body>
 	
 </html>

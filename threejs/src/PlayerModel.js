@@ -5,13 +5,15 @@ export class PlayerModel extends BaseModel {
     constructor(model_file, scene, loc, poseMapBones, frame_buffer_size = 5, sampling_interval_ms = 25) {
         super(model_file, scene, loc, frame_buffer_size, sampling_interval_ms);
         this.poseMapBones = poseMapBones;
-        this.event = new Event('DetectionBegun');
+        this.detectStartEvent = new Event('DetectionReady');
+        this.poseMadeEvent = new Event('PoseMadeEvent');
     }
 
     update(delta_time, model_to_real_map) {
         var latest_frame = null
         if (this.model) {
             if (this.pose_frames && this.pose_started) {
+                console.log("FIRST TIME:", (new Date()).getTime() - this.init_time - this.sampling_interval_ms);
                 let res = this.pose_frames.getInterpolatedState((new Date()).getTime() - this.init_time - this.sampling_interval_ms, model_to_real_map);
                 if (res) {
                     for (const [k, v] of Object.entries(res)) {
@@ -19,9 +21,9 @@ export class PlayerModel extends BaseModel {
                     }
                 }
                 latest_frame = this.pose_frames.getLastFrame();
-                let pos = this.pose_frames.getInterpolatedPosition((new Date()).getTime() - this.init_time - this.sampling_interval_ms);
+                let pos = this.pose_frames.getInterpolatedPosition((new Date()).getTime() - this.init_time - this.sampling_interval_ms, document.getElementById('webcam'));
                 if (pos) {
-                    this.model.scene.position.set(this.loc.x - (pos[0] * 2 - 1), this.loc.y - (pos[1] * 2 - 1), 0);
+                    this.model.scene.position.set(this.loc.x - (pos[0] * 2 - 1), this.loc.y, .25);
                 }
             }
             this.model.update(delta_time);
@@ -39,7 +41,6 @@ export class PlayerModel extends BaseModel {
 
     add_video(video) {
         this.video = video;
-        this.video_ended = false;
     }
 
     start_detection() {
@@ -47,12 +48,24 @@ export class PlayerModel extends BaseModel {
         setInterval(() => { detect() }, this.sampling_interval_ms);
     }
     
+    get_current_real_bones() {
+        console.log("SECOND TIME:", (new Date()).getTime() - this.init_time - this.sampling_interval_ms);
+        if (this.model) {
+            if (this.pose_frames && this.pose_started) {
+                console.log((new Date()).getTime() - this.init_time - this.sampling_interval_ms);
+                let frame_ret = this.pose_frames.getFrames((new Date()).getTime() - this.init_time - this.sampling_interval_ms);
+                return frame_ret[0].bones;
+            }
+        }
+    }
+
     async detectPoses() {
-        if (this.detector && this.video && !this.video_ended && this.pose_frames) {
+        if (this.detector && this.video && this.pose_frames) {
             const poses = await this.detector.estimatePoses(this.video);
+            dispatchEvent(this.poseMadeEvent);
             if (this.video.paused) {
                 this.video.play();
-                dispatchEvent(this.event);
+                dispatchEvent(this.detectStartEvent);
             }
             if (this.video && poses && poses[0]) {
                 if (!this.pose_frames.frames[0]) {

@@ -48,7 +48,7 @@ export class FrameBuffer {
         return (new Quaternion()).multiplyQuaternions(this.init_quats[k], deltaLocalRot).normalize();
     }
 
-    getInterpolatedPosition(time) {
+    getInterpolatedPosition(time, video) {
         // lerp positions
         let [f1, f2] = this.getFrames(time);
         if (f1 == null) {
@@ -227,7 +227,6 @@ export class SavedFrames extends FrameBuffer {
 export class Frame {
     constructor(pointMap, keypoints_arr, keypoints_2d_arr=null, elapsed_time) {
         this.time = elapsed_time //(new Date()).getTime(); // ms 
-        //console.log("Time: ", this.time);
         this.bones = new Object();
         this.displayBones = new Object();
         if (keypoints_arr !== null && keypoints_arr.length > 0) {

@@ -7,6 +7,7 @@ export class PlaybackModel extends BaseModel {
     constructor(model_file, scene, loc, poseMapBones, frame_buffer_size = 5, sampling_interval_ms = 25) {
         super(model_file, scene, loc, frame_buffer_size, sampling_interval_ms);
         this.poseMapBones = poseMapBones;
+        this.playing = false;
     }
 
     async loadSavedFrames(file_dir) {
@@ -14,12 +15,16 @@ export class PlaybackModel extends BaseModel {
         this.pose_frames_saved = new SavedFrames(arr.length, this.init_quats, this.init_inv_quats);
         for (const frame of arr) {
             this.pose_frames_saved.add(new Frame(this.poseMapBones, frame["space_points"], frame["flat_points"], frame["time"]));
-            console.log(this.pose_frames_saved);
         }
     }
 
     on_load() {
         this.loadSavedFrames('/saved/sasuke.json');
+    }
+
+    start_playback() {
+        this.init_time = (new Date()).getTime();
+        this.playing = true;
     }
 
     // Called each time ThreeJS wants a new frame!
@@ -30,17 +35,17 @@ export class PlaybackModel extends BaseModel {
     // loadSavedFrames does the setup 
     update(delta_time, modelToRealMap) {
         if (this.model) {
-            if (this.pose_frames_saved) {
-                let res = this.pose_frames_saved.getInterpolatedState(this.animate_init_time ? 
-                    (new Date()).getTime() - this.animate_init_time : 0, modelToRealMap);
-                if (!this.animate_init_time) {
-                    this.animate_init_time = (new Date()).getTime();
-                }
-                console.log(res, (new Date()).getTime() - this.animate_init_time);
+            if (this.playing && this.pose_frames_saved) {
+                let res = this.pose_frames_saved.getInterpolatedState(
+                    (new Date()).getTime() - this.init_time, modelToRealMap);
                 if (res) {
                     for (const [k, v] of Object.entries(res)) {
                         this.model.humanoid.getBoneNode(k).setRotationFromQuaternion(v);
                     }
+                }
+                let pos = this.pose_frames_saved.getInterpolatedPosition((new Date()).getTime() - this.init_time - this.sampling_interval_ms, document.getElementById('playback'));
+                if (pos) {
+                    this.model.scene.position.set(this.loc.x - (pos[0] * 2 - 1), 0, 0);
                 }
             }
             this.model.update(delta_time);

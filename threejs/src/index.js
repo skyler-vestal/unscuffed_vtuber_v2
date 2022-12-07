@@ -13,6 +13,7 @@ import Stats from 'stats.js'
 import * as dat from 'dat.gui';
 
 import { TTFLoader } from 'three/examples/jsm/loaders/TTFLoader';
+import { PlayerModel } from './PlayerModel.js';
 
 class TrackManager {
     constructor(tracks) {
@@ -26,8 +27,6 @@ class TrackManager {
         for (let i = 0; i < this.tracks.length; i++) {
             if (track_name === this.tracks[i].name) {
                 this.current_track = this.tracks[i];
-                
-
                 this.update_game_state();
                 return;
             }
@@ -59,7 +58,6 @@ class TrackManager {
             video.currentTime = 0;
 
             video.appendChild(source);
-            //predictWebcam();
 
             let countdown_sec = 3;
             let interval_id = setInterval(() => {
@@ -70,7 +68,7 @@ class TrackManager {
 
 
                     video.play();
-                    animate_init_time = new Date().getTime();
+                    playback_model.start_playback();
                     
 
                     this.current_track.play();
@@ -110,7 +108,10 @@ var tm = new TrackManager([
 ]);
 
 // STREAM
-const WEBCAM_ENABLED = false;
+const WEBCAM_ENABLED = true;
+const WEBCAM_WIDTH = 640;
+const WEBCAM_HEIGHT = 480;
+
 var source; // video source
 
 // GUI
@@ -184,7 +185,7 @@ var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
 // Video stream
-const video = document.getElementById('video');
+const video = document.getElementById('playback');
 console.log(video)
 
 var renderer = new THREE.WebGLRenderer({ alpha: true });
@@ -194,7 +195,7 @@ document.body.appendChild( renderer.domElement );
 document.body.appendChild(stats.dom)
 stats.domElement.style = 'bottom:10px';
 
-camera.position.set( 0, 1.25, -1.00 );
+camera.position.set( 0, 1.25, -1.5 );
 camera.lookAt( 0, .90, 0 );
 
 const light = new THREE.DirectionalLight(0xffffff, 1);
@@ -235,8 +236,9 @@ function renderText(text) { // when all resources are loaded
 let bones_drawn = [];
 
 // just testing the base model works
-var tmp_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones);
-//var tmp_model = new PlayerModel('/models/Ashtra.vrm', scene, new Vector3(0, 0, 0), poseMapBones);
+var player_model = new PlayerModel('/models/Ashtra.vrm', scene, new Vector3(1, 0, .25), poseMapBones);
+window.addEventListener('PoseMadeEvent', (e) => { console.log(player_model.get_current_real_bones()); }, false);
+var playback_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(-1, 0, .25), poseMapBones);
 
 const disp_material = new THREE.LineBasicMaterial({
     color: 0xffffff
@@ -244,6 +246,11 @@ const disp_material = new THREE.LineBasicMaterial({
 
 function vecToScreen(v) {
     return new THREE.Vector3(v.x / window.innerWidth * 2 - 1, -(v.y / window.innerHeight * 2 - 1), -1);
+}
+
+function getPosesSimilarity(model_one, model_two) {
+    percent_similar = 0
+
 }
 
 function drawBones(frame) {
@@ -274,9 +281,9 @@ var animate = function () {
     //}, 100);
 
     stats.begin()
-    tmp_model.update(clock.getDelta(), modelToRealMap);
-    //animateFromFile();
-    //animateFromStream();
+    const delta = clock.getDelta()
+    player_model.update(delta, modelToRealMap);
+    playback_model.update(delta + clock.getDelta(), modelToRealMap);
 	renderer.render(scene, camera);
     stats.end()
 };
@@ -284,7 +291,7 @@ var animate = function () {
 animate();
 
 
-window.addEventListener('DOMContentLoaded', WEBCAM_ENABLED ? enableCam : enableVideo);
+window.addEventListener('DOMContentLoaded', () => { enableCam(); enableVideo(); });
 
 function enableVideo(event) {
     // declared at top of file
@@ -317,16 +324,17 @@ function enableCam(event) {
         video: true
     };
   
-    video.width = 640;
-    video.height = 480;
-    video.autoplay = true;
+    const webcam = document.getElementById('webcam');
+    webcam.width = WEBCAM_WIDTH;
+    webcam.height = WEBCAM_HEIGHT;
+    webcam.autoplay = true;
     // Activate the webcam stream.
     navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
-        video.srcObject = stream;
-        video.addEventListener('loadeddata', function() { 
-            tmp_model.add_video(video);
-            tmp_model.add_detector(get_detector());
-            tmp_model.start_detection();
+        webcam.srcObject = stream;
+        webcam.addEventListener('loadeddata', function() { 
+            player_model.add_video(webcam);
+            player_model.add_detector(get_detector());
+            player_model.start_detection();
         });
     });
 }
