@@ -55,6 +55,9 @@ Skyler:
 
 Daniel:
 
+- Refactored PlaybackModel class 
+- Implemetation of model changing
+- GUI for model changing
 Caleb:
 
 ### Controls
