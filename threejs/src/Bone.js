@@ -222,6 +222,10 @@ export class SavedFrames extends FrameBuffer {
         }
         return null;
     }
+
+    getLastFrame() {
+        return this.frames[this.frames.length - 1];
+    }
 }
 
 export class Frame {

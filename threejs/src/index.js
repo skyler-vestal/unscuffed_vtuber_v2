@@ -116,7 +116,8 @@ function change_models(model) {
     scene.clear();
     scene.add(light);
     tm.update_game_state();
-    tmp_model = new PlaybackModel(cur_model, scene, new Vector3(0, 0, 0), poseMapBones);
+    player_model = new PlayerModel(cur_model, scene, new Vector3(1, 0, .25), poseMapBones);
+    playback_model = new PlaybackModel(cur_model, scene, new Vector3(-1, 0, .25), poseMapBones);
 }
 
 
@@ -126,7 +127,6 @@ const WEBCAM_WIDTH = 640;
 const WEBCAM_HEIGHT = 480;
 
 var source; // video source
-var tmp_model;
 
 // Score
 var accurate_score = 0;
@@ -282,6 +282,7 @@ let bones_drawn = [];
 var player_model = new PlayerModel(cur_model, scene, new Vector3(1, 0, .25), poseMapBones);
 var playback_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(-1, 0, .25), poseMapBones);
 window.addEventListener('PoseMadeEvent', (e) => { comparePoses(); }, false);
+window.addEventListener('PlaybackEnded', (e) => { tm.stop(); }, false);
 
 const disp_material = new THREE.LineBasicMaterial({
     color: 0xffffff

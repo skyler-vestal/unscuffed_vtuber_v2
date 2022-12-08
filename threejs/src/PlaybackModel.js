@@ -7,6 +7,7 @@ export class PlaybackModel extends BaseModel {
     constructor(model_file, scene, loc, poseMapBones, frame_buffer_size = 5, sampling_interval_ms = 25) {
         super(model_file, scene, loc, frame_buffer_size, sampling_interval_ms);
         this.poseMapBones = poseMapBones;
+        this.playbackEnded = new Event('PlaybackEnded');
         this.playing = false;
     }
 
@@ -46,6 +47,9 @@ export class PlaybackModel extends BaseModel {
     update(delta_time, modelToRealMap) {
         if (this.model) {
             if (this.playing && this.pose_frames_saved) {
+                if (this.pose_frames_saved.getLastFrame().time < (new Date()).getTime() - this.init_time) {
+                    dispatchEvent(this.playbackEnded);
+                }
                 let res = this.pose_frames_saved.getInterpolatedState(
                     (new Date()).getTime() - this.init_time, modelToRealMap);
                 if (res) {
