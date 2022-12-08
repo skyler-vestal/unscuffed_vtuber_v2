@@ -41,7 +41,9 @@ class TrackManager {
     stop() {
         video.removeAttribute('src');
         video.pause();
-        video.currentTime = 0;        
+        video.currentTime = 0;
+        playback_model.stop_playback();
+        song_playing = false;   
 
         this.current_track.stop();
         this.current_track = null;
@@ -66,7 +68,7 @@ class TrackManager {
                     console.log("track started");
                     renderText('Now playing "' + this.current_track.name + '"');
 
-
+                    song_playing = true;
                     video.play();
                     playback_model.start_playback();
                     
@@ -125,6 +127,11 @@ const WEBCAM_HEIGHT = 480;
 
 var source; // video source
 var tmp_model;
+
+// Score
+var accurate_score = 0;
+var poses_captured = 0;
+var song_playing = false;
 
 // GUI
 const gui = new dat.GUI();
@@ -231,6 +238,7 @@ const fontLoader = new THREE.FontLoader(manager);
 const ttfLoader = new TTFLoader(manager);
 var font;
 var textMesh;
+var scoreMesh;
 ttfLoader.load('fonts/Happiness.ttf', (json) => {
     const happinessFont = fontLoader.parse(json);
     font = happinessFont;
@@ -252,13 +260,28 @@ function renderText(text) { // when all resources are loaded
     scene.add(textMesh);
 }
 
+function renderScoreText(text) { // when all resources are loaded
+    if (scoreMesh) scene.remove(scoreMesh);
+    const textGeometry = new THREE.TextGeometry(text, {
+        height: 0,
+        size: 0.1,
+        font: font
+    });
+    const textMaterial = new THREE.MeshNormalMaterial();
+    scoreMesh = new THREE.Mesh(textGeometry, textMaterial);
+    scoreMesh.scale.x = -1;
+    scoreMesh.position.x = 1.2;
+    scoreMesh.position.y = -.5;
+    scene.add(scoreMesh);
+}
+
 
 let bones_drawn = [];
 
 // just testing the base model works
 var player_model = new PlayerModel(cur_model, scene, new Vector3(1, 0, .25), poseMapBones);
 var playback_model = new PlaybackModel('/models/Ashtra.vrm', scene, new Vector3(-1, 0, .25), poseMapBones);
-window.addEventListener('PoseMadeEvent', (e) => { console.log(getPosesSimilarity(player_model, playback_model)); }, false);
+window.addEventListener('PoseMadeEvent', (e) => { comparePoses(); }, false);
 
 const disp_material = new THREE.LineBasicMaterial({
     color: 0xffffff
@@ -268,15 +291,32 @@ function vecToScreen(v) {
     return new THREE.Vector3(v.x / window.innerWidth * 2 - 1, -(v.y / window.innerHeight * 2 - 1), -1);
 }
 
+function comparePoses() {
+    if (song_playing) {
+        poses_captured += 1;
+        let frame_score = getPosesSimilarity(player_model, playback_model);
+        if (frame_score != -1) {
+            accurate_score += frame_score;
+            var acc = 1 - accurate_score / poses_captured;
+            acc *= 100;
+            acc = acc.toFixed(2);
+            renderScoreText(acc + " Accuracy");
+        }
+    }
+}
+
 function getPosesSimilarity(model_one, model_two) {
     var total_similar = 0
     const frame_1 = model_one.get_current_real_bones();
     const frame_2 = model_two.get_current_real_bones();
-    for (const [key, value] of Object.entries(poseMapBones)) {
-        const percent = frame_1[key].getTangent().angleTo(frame_2[key].getTangent()) / Math.PI;
-        total_similar += percent;
+    if (frame_1 && frame_2) {
+        for (const [key, value] of Object.entries(poseMapBones)) {
+            const percent = frame_1[key].getTangent().angleTo(frame_2[key].getTangent()) / Math.PI;
+            total_similar += percent;
+        }
+        return total_similar / Object.keys(poseMapBones).length;
     }
-    return total_similar / Object.keys(poseMapBones).length;
+    return -1;
 }
 
 function drawBones(frame) {

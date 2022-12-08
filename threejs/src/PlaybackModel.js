@@ -27,8 +27,14 @@ export class PlaybackModel extends BaseModel {
         this.playing = true;
     }
 
+    stop_playback() {
+        this.init_time = 0;
+        this.playing = false;
+    }
+
     get_current_real_bones() {
-        return this.pose_frames_saved.getFrames((new Date()).getTime() - this.init_time)[0].bones;
+        let frame = this.pose_frames_saved.getFrames((new Date()).getTime() - this.init_time);
+        return frame[0] ? frame[0].bones : null;
     }
 
     // Called each time ThreeJS wants a new frame!
