@@ -10,11 +10,11 @@ To run:
 $ npm run dev
 ```
 
-If encounter error
+If encountering the following error
 ```
 this[kHandle] = new _Hash(algorithm, xofLen);
 ```
-set the environment variable
+set the environment variable:
 ```
 $ export NODE_OPTIONS=--openssl-legacy-provider
 ```
