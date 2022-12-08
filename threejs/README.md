@@ -45,7 +45,7 @@ Skyler:
 - Animates model from video stream
 - Improves performance by removing hand detector
 - Saves pose data from a video
-- Reanimate model from video
+- Reanimate model from pose data
 - Created base model class refactor
 - Refactored player into WebcamModel class
 - Finished refactor of PlaybackModel class
@@ -55,7 +55,19 @@ Skyler:
 
 Daniel:
 
+- Changes FrameBuffer class to use relative timing
+- Refactored PlaybackModel class 
+- Implemetation of model changing
+- GUI for model changing
+
 Caleb:
+
+- Setup of DatGUI for UI
+- Setup of audio with ThreeJS
+- Adds rendered text (and sprites not used)
+- Create Track class for songs
+- Creates TrackManager class for user input
+
 
 ### Controls
 
