@@ -2,7 +2,9 @@
 
 ## Installation
 
-To install::
+Do the following in the threejs directory:
+
+To install:
 ```
 $ npm install
 ```
